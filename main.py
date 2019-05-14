@@ -17,7 +17,7 @@ def convert_file(file_name):
     
     file_text = read_file(file_name)
     out_text = convert(file_text)
-    write_file(file_name_noext + ".ipynb", out_text)
+    write_file("out/" + file_name_noext + ".ipynb", out_text)
     print("Converted " + file_name)
 
 def read_file(file_name):
@@ -46,6 +46,7 @@ def convert(text):
     for line in text.splitlines():
         for c in charactersToReplace:
             line = line.replace(c, "")
+        line = line.replace("\\","\\\\")
         line = line.replace("\"","\\\"")
         # line = line.strip()
         if len(line) == 0:
@@ -56,23 +57,24 @@ def convert(text):
                 code_accum = []
                 in_code = False;
                 cell_entries.append(code_cell.format(execution_count, string_format_str.format(code_string)))
-                execution_count += 1;
+                execution_count += 1
             if line.startswith("# In["):
                 if line[5] == " ": # MAN this code is so hackish
                     continue;
                 execution_count=int(line[5:-2]) # Seriously mate learn some regex please
             else:
-                cell_entries.append(comment_cell.format(string_format_str.format(line[2:])))
+                line = line[1:]
+                if len(line) > 0:
+                    cell_entries.append(comment_cell.format(string_format_str.format(line)))
         else:
             in_code = True;
             code_accum.append(line);
 
     if in_code:
-        code_string = "\n,".join(code_accum)
+        code_string = "\\n\",\n\"".join(code_accum)
         code_accum = []
-        in_code = False;
-        cell_entries.append(code_cell.format(execution_count, code_string))
-
+        cell_entries.append(code_cell.format(execution_count, string_format_str.format(code_string)))
+        
     return whole_file_format.format(",\n".join(cell_entries), PYTHON_VERSION)
 
 if __name__ == "__main__": 
